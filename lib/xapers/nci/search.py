@@ -2,9 +2,13 @@ import os
 import urwid
 import subprocess
 import collections
+import tempfile
+import codecs
+import latexcodec
 
 from ..cli import initdb
 from ..database import DatabaseLockError
+from ..bibtex import Bibtex
 
 ############################################################
 
@@ -183,6 +187,7 @@ class Search(urwid.WidgetWrap):
         ('b', "viewBibtex"),
         ('+', "addTags"),
         ('-', "removeTags"),
+        ('e', "editEntry"),
         ('a', "archive"),
         ('meta i', "copyID"),
         ('meta f', "copyPath"),
@@ -214,6 +219,9 @@ class Search(urwid.WidgetWrap):
         self.docwalker = DocWalker(docs)
         self.listbox = urwid.ListBox(self.docwalker)
         w = self.listbox
+
+        # TODO put this somewhere configurable
+        self.editor = os.environ.get('EDITOR', 'vim')
 
         self.__super.__init__(w)
 
@@ -306,6 +314,62 @@ class Search(urwid.WidgetWrap):
         entry = self.listbox.get_focus()[0]
         if not entry: return
         self.ui.newbuffer(['bibview', 'id:' + str(entry.docid)])
+
+    def editEntry(self):
+        entry, pos = self.listbox.get_focus()
+        if not entry: return
+        bib = entry.doc.get_bibtex()
+        if not bib:
+            self.ui.set_status('ERROR: id:%s: bibtex not found.' % entry.docid)
+            return
+        try:
+            # TODO is it cleaner to directly edit the bibtex?
+            # problem with that is that there is no check on bibtex validity
+            #with Database(self.ui.xroot, writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_') as tmpf:
+            with initdb(writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_') as tmpf:
+                # TODO what is better? this loses intrinsic utf8 info. OTOH ascii is just easier to deal with.
+                # TODO alternatively bibtex has some latex encoders.
+                #tmpf.write(bib.encode('utf-8'))
+                #tmpf.write(unidecode(bib))
+                tmpf.write(bib.encode('latex'))
+                tmpf.flush()
+                status = subprocess.call([self.editor, tmpf.name])
+                # vim closes the handle
+                if status!=0:
+                    self.ui.set_status('ERROR: Editor returned non-zero status.')
+                    return
+                # TODO catch io errors here?
+                with open(tmpf.name, 'r') as tmpf2:
+                    new_bib = tmpf2.read().decode('latex')
+                if new_bib==bib:
+                    self.ui.set_status('No change in bib file.')
+                    return
+                tmpbib = Bibtex(new_bib)
+                try:
+                    new_bibentry = Bibtex(new_bib)[0]
+                except IndexError:
+                    self.ui.set_status('ERROR: Invalid bibtex entry.')
+                    return
+
+                # TODO have confirmation?
+                # TODO sanity checks for key or entry?
+                doc = db[entry.docid]
+                doc.add_bibentry(new_bibentry)
+                doc.sync()
+                msg = 'Updated entry.'
+            # TODO what is the clean way?
+            # I think having the option of reloading (disable caching) in Document would make sense
+            entry.doc = self.ui.db[entry.docid]
+            #entry.refreshBibFields()
+            #self.listbox.get_focus()[0] = (self, doc, doc_ind, total_docs):
+
+        except DatabaseLockError as e:
+            msg = e.msg
+
+        self.refresh()
+
+        self.ui.db.reopen()
+        self.ui.set_status(msg)
 
     def copyID(self):
         """copy document ID to clipboard"""
