@@ -334,12 +334,14 @@ def importbib(db, bibfile, tags=[], overwrite=False):
                 else:
                     docs.append(bdoc)
 
+            # TODO: this is not always wanted since source import sometimes breaks.
+            # TODO: make it an option
             # check for known sids
-            for source in sources.scan_bibentry(entry):
-                sdoc = db.doc_for_source(source.sid)
-                # FIXME: why can't we match docs in list?
-                if sdoc and sdoc.docid not in [doc.docid for doc in docs]:
-                    docs.append(sdoc)
+            #for source in sources.scan_bibentry(entry):
+            #    sdoc = db.doc_for_source(source.sid)
+            #    # FIXME: why can't we match docs in list?
+            #    if sdoc and sdoc.docid not in [doc.docid for doc in docs]:
+            #        docs.append(sdoc)
 
             if len(docs) == 0:
                 doc = Document(db)
