@@ -190,7 +190,7 @@ class Document():
         if prefix:
             term_gen.index_text(text, 1, prefix)
         term_gen.index_text(text)
-            
+
     # return a list of terms for prefix
     def _term_iter(self, prefix=None):
         term_iter = iter(self.xapian_doc)
@@ -392,9 +392,10 @@ class Document():
             # FIXME: better way to do this?
             self._set_authors(' '.join(authors))
 
+        # TODO configurable disable
         # add any sources in the bibtex
-        for source in Sources().scan_bibentry(bibentry):
-            self.add_sid(source.sid)
+        #for source in Sources().scan_bibentry(bibentry):
+        #    self.add_sid(source.sid)
 
         # FIXME: index 'keywords' field as regular terms
 
