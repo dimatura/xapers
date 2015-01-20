@@ -149,7 +149,7 @@ class DocWalker(urwid.ListWalker):
 
     def prev_position(self, pos):
         return pos - 1
-        
+
 ############################################################
 
 class Search(urwid.WidgetWrap):
@@ -170,9 +170,9 @@ class Search(urwid.WidgetWrap):
         ]
 
     keys = collections.OrderedDict([
-        ('n', "nextEntry"),
+        ('j', "nextEntry"),
         ('down', "nextEntry"),
-        ('p', "prevEntry"),
+        ('k', "prevEntry"),
         ('up', "prevEntry"),
         ('<', "firstEntry"),
         ('>', "lastEntry"),
