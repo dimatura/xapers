@@ -188,7 +188,8 @@ class Search(urwid.WidgetWrap):
         ('+', "addTags"),
         ('-', "removeTags"),
         ('e', "editEntry"),
-        ('a', "archive"),
+        #('a', "archive"),
+        ('a', "annotateEntry"),
         ('meta i', "copyID"),
         ('meta f', "copyPath"),
         ('meta u', "copyURL"),
@@ -323,18 +324,10 @@ class Search(urwid.WidgetWrap):
             self.ui.set_status('ERROR: id:%s: bibtex not found.' % entry.docid)
             return
         try:
-            # TODO is it cleaner to directly edit the bibtex?
-            # problem with that is that there is no check on bibtex validity
-            #with Database(self.ui.xroot, writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_') as tmpf:
             with initdb(writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_') as tmpf:
-                # TODO what is better? this loses intrinsic utf8 info. OTOH ascii is just easier to deal with.
-                # TODO alternatively bibtex has some latex encoders.
-                #tmpf.write(bib.encode('utf-8'))
-                #tmpf.write(unidecode(bib))
                 tmpf.write(bib.encode('latex'))
                 tmpf.flush()
                 status = subprocess.call([self.editor, tmpf.name])
-                # vim closes the handle
                 if status!=0:
                     self.ui.set_status('ERROR: Editor returned non-zero status.')
                     return
@@ -350,18 +343,13 @@ class Search(urwid.WidgetWrap):
                 except IndexError:
                     self.ui.set_status('ERROR: Invalid bibtex entry.')
                     return
-
                 # TODO have confirmation?
                 # TODO sanity checks for key or entry?
                 doc = db[entry.docid]
                 doc.add_bibentry(new_bibentry)
                 doc.sync()
                 msg = 'Updated entry.'
-            # TODO what is the clean way?
-            # I think having the option of reloading (disable caching) in Document would make sense
             entry.doc = self.ui.db[entry.docid]
-            #entry.refreshBibFields()
-            #self.listbox.get_focus()[0] = (self, doc, doc_ind, total_docs):
 
         except DatabaseLockError as e:
             msg = e.msg
@@ -370,6 +358,17 @@ class Search(urwid.WidgetWrap):
 
         self.ui.db.reopen()
         self.ui.set_status(msg)
+
+    def annotateEntry(self):
+        """ TODO make this proper """
+        entry = self.listbox.get_focus()[0]
+        if not entry: return
+        notes_fname = entry.doc.get_notes_path()
+        status = subprocess.call([self.editor, notes_fname])
+        if status!=0:
+            self.ui.set_status('ERROR: Editor returned non-zero status.')
+            return
+        self.ui.set_status('added annotation in %s'%notes_fname)
 
     def copyID(self):
         """copy document ID to clipboard"""

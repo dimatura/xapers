@@ -138,6 +138,9 @@ class Document():
         if os.path.exists(self.docdir) and os.path.isdir(self.docdir):
             shutil.rmtree(self.docdir)
 
+    def get_notes_path(self):
+        return os.path.join(self.docdir, 'notes')
+
     def sync(self):
         """Sync document to database."""
         # FIXME: add value for modification time
