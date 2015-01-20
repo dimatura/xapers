@@ -199,6 +199,8 @@ if __name__ == '__main__':
     elif cmd in ['import','i']:
         tags = []
 
+        overwrite = False
+
         argc = 2
         while True:
             if argc >= len(sys.argv):
@@ -222,7 +224,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
         with cli.initdb(writable=True, create=True) as db:
-            cli.importbib(db, bibfile, tags=tags)
+            cli.importbib(db, bibfile, tags=tags, overwrite=overwrite)
 
     ########################################
     elif cmd in ['update']:

@@ -328,7 +328,11 @@ def importbib(db, bibfile, tags=[], overwrite=False):
             # check for doc with this bibkey
             bdoc = db.doc_for_bib(entry.key)
             if bdoc:
-                docs.append(bdoc)
+                if not overwrite:
+                    print >>sys.stderr, "  Bibtex key %s already exists and overwrite is disabled, skipping."%entry.key
+                    continue
+                else:
+                    docs.append(bdoc)
 
             # check for known sids
             for source in sources.scan_bibentry(entry):
