@@ -322,7 +322,7 @@ class Search(urwid.WidgetWrap):
         bib = entry.doc.get_bibtex()
         if not bib:
             self.ui.set_status('ERROR: id:%s: bibtex not found.' % entry.docid)
-            return
+            bib = '@inproceedings\n{ KEY,\nauthor = AUTHOR,\ntitle = TITLE,\nbooktitle = BOOKTITLE,\nyear = 2000}'
         try:
             with initdb(writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_') as tmpf:
                 tmpf.write(bib.encode('latex'))
