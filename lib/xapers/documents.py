@@ -253,7 +253,9 @@ class Document():
 
         # set data to be text sample
         # FIXME: is this the right thing to put in the data?
-        summary = text[0:997] + '...'
+        # TODO DMS ??? should we have more for full-text search?
+        LIMIT = 1000
+        summary = text[0:(LIMIT-3)] + '...'
         self._set_data(summary)
 
         # FIXME: should files be renamed to something generic (0.pdf)?
