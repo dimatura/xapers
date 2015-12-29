@@ -334,10 +334,11 @@ class Search(urwid.WidgetWrap):
                 # TODO catch io errors here?
                 with open(tmpf.name, 'r') as tmpf2:
                     new_bib = tmpf2.read().decode('latex')
+                print bib,new_bib
                 if new_bib==bib:
                     self.ui.set_status('No change in bib file.')
                     return
-                tmpbib = Bibtex(new_bib)
+                #tmpbib = Bibtex(new_bib)
                 try:
                     new_bibentry = Bibtex(new_bib)[0]
                 except IndexError:
