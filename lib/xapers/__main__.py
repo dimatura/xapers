@@ -132,7 +132,8 @@ def make_query_string(terms, require=True):
 def import_nci():
     try:
         import nci
-    except ImportError:
+    except ImportError, err:
+        print err
         print >>sys.stderr, "The python-urwid package does not appear to be installed."
         print >>sys.stderr, "Please install to be able to use the curses UI."
         sys.exit(1)
