@@ -193,7 +193,9 @@ class Search(urwid.WidgetWrap):
         ('meta i', "copyID"),
         ('meta f', "copyPath"),
         ('meta u', "copyURL"),
-        ('meta b', "copyBibtex"),
+        #('meta b', "copyBibtex"),
+        ('y', "copyBibtex"),
+        ('c', "copyKey"),
         ])
 
     def __init__(self, ui, query=None):
@@ -317,6 +319,8 @@ class Search(urwid.WidgetWrap):
         self.ui.newbuffer(['bibview', 'id:' + str(entry.docid)])
 
     def editEntry(self):
+        """ edit bibtex in EDITOR
+        """
         entry, pos = self.listbox.get_focus()
         if not entry: return
         bib = entry.doc.get_bibtex()
@@ -361,7 +365,9 @@ class Search(urwid.WidgetWrap):
         self.ui.set_status(msg)
 
     def annotateEntry(self):
-        """ TODO make this proper """
+        """ add notes in EDITOR
+        TODO make this proper
+        """
         entry = self.listbox.get_focus()[0]
         if not entry: return
         notes_fname = entry.doc.get_notes_path()
@@ -413,6 +419,18 @@ class Search(urwid.WidgetWrap):
             return
         xclip(bibtex, isfile=True)
         self.ui.set_status('yanked bibtex: %s' % bibtex)
+
+    def copyKey(self):
+        """copy document key to clipboard"""
+        entry = self.listbox.get_focus()[0]
+        if not entry:
+            return
+        key = entry.doc.get_key()
+        if not key:
+            self.ui.set_status('ERROR: id:%d: bibtex not found.' % entry.docid)
+            return
+        xclip(key)
+        self.ui.set_status('yanked key: %s' % key)
 
     def addTags(self):
         """add tags to document (space separated)"""
