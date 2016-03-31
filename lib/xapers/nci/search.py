@@ -1,3 +1,6 @@
+
+import io
+import sys
 import os
 import urwid
 import subprocess
@@ -196,6 +199,7 @@ class Search(urwid.WidgetWrap):
         #('meta b', "copyBibtex"),
         ('y', "copyBibtex"),
         ('c', "copyKey"),
+        ('B', "printBibtex"),
         ])
 
     def __init__(self, ui, query=None):
@@ -322,23 +326,43 @@ class Search(urwid.WidgetWrap):
         """ edit bibtex in EDITOR
         """
         entry, pos = self.listbox.get_focus()
-        if not entry: return
-        bib = entry.doc.get_bibtex()
-        if not bib:
+        if not entry:
+            return
+        if not entry.doc.get_bibtex():
             self.ui.set_status('ERROR: id:%s: bibtex not found.' % entry.docid)
-            bib = '@inproceedings\n{ KEY,\nauthor = AUTHOR,\ntitle = TITLE,\nbooktitle = BOOKTITLE,\nyear = 2000}'
+            bib = u'@inproceedings\n{ KEY,\nauthor = AUTHOR,\ntitle = TITLE,\nbooktitle = BOOKTITLE,\nyear = 2000}'
+        else:
+            # bib = entry.doc.get_bibtex()
+            # note t is for text -> will return unicode
+            with io.open(entry.doc.get_bibpath(), 'rt') as f:
+                bib = f.read()
         try:
-            with initdb(writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_') as tmpf:
-                tmpf.write(bib.encode('latex'))
+            with initdb(writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_', delete=False) as tmpf:
+                with open('/tmp/foo', 'wb') as f:
+                    f.write(bib.encode('utf-8'))
+                # tmpf.write(bib.encode('latex'))
+                # tmpf.flush()
+                # we're taking a unicode object, encoding it as a bunch of bytes assuming utf-8
+                tmpf.write(bib.encode('utf-8'))
                 tmpf.flush()
+                #status = subprocess.call([self.editor, tmpf.name],
+                #                          stdin=self.ui.devnull,
+                #                          stdout=self.ui.devnull,
+                #                          stderr=self.ui.devnull)
+
+                # seems to work better
+                self.ui.mainloop.screen.stop()
                 status = subprocess.call([self.editor, tmpf.name])
+                self.ui.mainloop.screen.start()
+
                 if status!=0:
                     self.ui.set_status('ERROR: Editor returned non-zero status.')
                     return
                 # TODO catch io errors here?
-                with open(tmpf.name, 'r') as tmpf2:
-                    new_bib = tmpf2.read().decode('latex')
-                print bib,new_bib
+                with io.open(tmpf.name, 'rt') as tmpf2:
+                    # new_bib should be unicode object
+                    new_bib = tmpf2.read()
+                #print bib,new_bib
                 if new_bib==bib:
                     self.ui.set_status('No change in bib file.')
                     return
@@ -419,6 +443,18 @@ class Search(urwid.WidgetWrap):
             return
         xclip(bibtex, isfile=True)
         self.ui.set_status('yanked bibtex: %s' % bibtex)
+
+    def printBibtex(self):
+        """copy document bibtex to clipboard"""
+        entry = self.listbox.get_focus()[0]
+        if not entry: return
+        bibtex = entry.doc.get_bibpath()
+        if not bibtex:
+            self.ui.set_status('ERROR: id:%d: bibtex not found.' % entry.docid)
+            return
+        with open(bibtex, 'r') as f:
+            sys.stdout.write(f.read())
+        raise urwid.ExitMainLoop()
 
     def copyKey(self):
         """copy document key to clipboard"""
