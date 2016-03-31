@@ -337,7 +337,7 @@ class Search(urwid.WidgetWrap):
             with io.open(entry.doc.get_bibpath(), 'rt') as f:
                 bib = f.read()
         try:
-            with initdb(writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_', delete=False) as tmpf:
+            with initdb(writable=True) as db, tempfile.NamedTemporaryFile(suffix='.bib', prefix='vim_xapers_', delete=True) as tmpf:
                 with open('/tmp/foo', 'wb') as f:
                     f.write(bib.encode('utf-8'))
                 # tmpf.write(bib.encode('latex'))
